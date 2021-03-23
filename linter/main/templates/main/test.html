@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    function selectFolder(e) {
+    var theFiles = e.target.files;
+    var relativePath = theFiles[0].webkitRelativePath;
+    var folder = relativePath.split("/");
+    $("#" + id).val(folder[0]);
+}
+</script>
+
+<input type="hidden" name="dir_name" id="id_dir_name">
+<input type="file" name="file" onchange="selectFolder(event)"  multiple="" required="" id="id_file">
+
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+{% include "./helpers/header.html" %}
+<div class="container-fluid">
+    <div class="row">
+        {% include "./helpers/patern.html" %}
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+            <h2>{{title}}.py version- {{version}}</h2>
+
+            <span class="align-middle">
+                <h3>status:
+                <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-circle-fill" fill="currentColor"
+                     xmlns="http://www.w3.org/2000/svg">
+                        <circle fill="{{status_colour}}" cx="8" cy="8" r="8"/>
+                </svg> - {{status}}
+                </h3>
+            </span>
+            <div class="d-flex flex-row">
+                <a class="btn btn-info py-2 px-3" href="/process_syntax/{{ title }}">
+                    <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill" fill="currentColor"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path fill="{{status_colour}}"
+                              d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                    </svg>
+                    Click to run test
+                </a>
+
+                <form method="get" action="/delite/{{title}}">
+                    <button type=submit class="btn btn-danger py-2 px-3">
+                        Delite this program
+                    </button>
+                </form>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Version</th>
+                        <th>Time of test</th>
+                        <th>Syntax errors count</th>
+                        <th>Code rate</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for dat in dataset %}
+                    <tr>
+                        <td>{{forloop.counter}}</td>
+                        <td>{{dat.version}}</td>
+                        <td>{{dat.time}}</td>
+                        <td>
+                            <a class="btn btn-warning btn-sm" href="/syntax/{{title}}/{{dat.time}}" role="button">{{dat.count}}
+                                Errors -
+                                view</a>
+                        </td>
+                        <td>{{dat.score}}</td>
+                        {% if dat.r_err_text|length %}
+                        <td>
+                            <a class="btn btn-danger btn-sm" href="/runtime/{{title}}/{{dat.time}}" role="button">Errors
+                                - view</a>
+                        </td>
+                        {% else %}
+                        <td>
+                            <a class="btn btn-info btn-sm" href="/runtime/{{title}}/{{dat.time}}" role="button">Execution
+                                result - view</a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
