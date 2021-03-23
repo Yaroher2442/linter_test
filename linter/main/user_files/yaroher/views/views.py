@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .form import UploadFileForm, Register, Git_form
 from .models import Progs, Syntax
-from .tasks import syntax_test,syntax_test_2
+from .tasks import syntax_test
 
 
 @csrf_exempt
@@ -106,13 +106,12 @@ def prog(request, prg_name):
 
 
 def process_syntax(request, prg_name):
-    user_name = request.user.username
     analys_path = os.path.join(os.getcwd(), 'main', 'user_files', prg_name, prg_name + '.py')
     cur_prg = Progs.objects.get(filename=prg_name)
     prog_id = cur_prg.id
     version = cur_prg.version
-    # syntax_test(analys_path, prog_id, version)
-    syntax_test_2(os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name))
+    syntax_test(analys_path, prog_id, version)
+    # syntax_test_2(os.path.join(os.getcwd(), 'main', 'user_files', prg_name, prg_name+'.py'))
     return HttpResponseRedirect(f'/prog/{prg_name}')
 
 
