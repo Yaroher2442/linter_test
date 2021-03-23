@@ -46,6 +46,7 @@
                     <tr>
                         <th>№</th>
                         <th>Version</th>
+                        <th>File</th>
                         <th>Time of test</th>
                         <th>Syntax errors count</th>
                         <th>Code rate</th>
@@ -56,9 +57,10 @@
                     <tr>
                         <td>{{forloop.counter}}</td>
                         <td>{{dat.version}}</td>
+                        <td>{{dat.file}}</td>
                         <td>{{dat.time}}</td>
                         <td>
-                            <a class="btn btn-warning btn-sm" href="/syntax/{{title}}/{{dat.time}}" role="button">{{dat.count}}
+                            <a class="btn btn-warning btn-sm" href="/syntax/{{dat.id}}" role="button">{{dat.count}}
                                 Errors -
                                 view</a>
                         </td>

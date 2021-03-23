@@ -62,6 +62,7 @@ def syntax_test_2(file_path, prog_id, version):
                         report_items['time'] = datetime.now().strftime("%d.%m.%Y-%H:%M:%S")
                         print(report_items)
                         test_s = Syntax(time=report_items['time'],
+                                        file=filename,
                                         version=version,
                                         prog_id=prog_id,
                                         err_text=report_items['syntax_errors'],

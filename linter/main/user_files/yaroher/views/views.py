@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .form import UploadFileForm, Register, Git_form
 from .models import Progs, Syntax
-from .tasks import syntax_test
+from .tasks import syntax_test,syntax_test_2
 
 
 @csrf_exempt
@@ -88,30 +88,26 @@ def prog(request, prg_name):
     status = cur_prg.get_status()
     version = cur_prg.get_version()
     color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green'}
+
     synt = Syntax.objects.filter(prog_id=p_id)
-    dataset = []
-    for s in synt:
-        up_data = s.get_dict()
-        up_data['time'] = s.time
-        dataset.append(up_data)
     context = {'prg_names': valids_progs(user_name),
                'title': prg_name,
                'status': status.replace('_', ' '),
                'status_colour': color_dict[status],
                'version': version,
-               'dataset': dataset,
+               'dataset': synt,
                'user_name': user_name
                }
     return render(request, 'main/prog.html', context)
 
-
 def process_syntax(request, prg_name):
+    user_name = request.user.username
     analys_path = os.path.join(os.getcwd(), 'main', 'user_files', prg_name, prg_name + '.py')
     cur_prg = Progs.objects.get(filename=prg_name)
     prog_id = cur_prg.id
     version = cur_prg.version
-    syntax_test(analys_path, prog_id, version)
-    # syntax_test_2(os.path.join(os.getcwd(), 'main', 'user_files', prg_name, prg_name+'.py'))
+    cell_dir=os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name)
+    syntax_test_2(cell_dir,prog_id,version)
     return HttpResponseRedirect(f'/prog/{prg_name}')
 
 

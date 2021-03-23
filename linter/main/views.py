@@ -88,22 +88,17 @@ def prog(request, prg_name):
     status = cur_prg.get_status()
     version = cur_prg.get_version()
     color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green'}
+
     synt = Syntax.objects.filter(prog_id=p_id)
-    dataset = []
-    for s in synt:
-        up_data = s.get_dict()
-        up_data['time'] = s.time
-        dataset.append(up_data)
     context = {'prg_names': valids_progs(user_name),
                'title': prg_name,
                'status': status.replace('_', ' '),
                'status_colour': color_dict[status],
                'version': version,
-               'dataset': dataset,
+               'dataset': synt,
                'user_name': user_name
                }
     return render(request, 'main/prog.html', context)
-
 
 def process_syntax(request, prg_name):
     user_name = request.user.username
@@ -111,7 +106,6 @@ def process_syntax(request, prg_name):
     cur_prg = Progs.objects.get(filename=prg_name)
     prog_id = cur_prg.id
     version = cur_prg.version
-    # syntax_test(analys_path, prog_id, version)
     cell_dir=os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name)
     syntax_test_2(cell_dir,prog_id,version)
     return HttpResponseRedirect(f'/prog/{prg_name}')
@@ -128,19 +122,19 @@ def upload(request):
                 return os.system(
                     f'GIT_TERMINAL_PROMPT=0 git clone {href} {path}')
 
-            def git_error():
+            def git_error(err):
                 context = {'prg_names': valids_progs(user_name),
                            'form': UploadFileForm(),
                            'git': Git_form(),
                            'user_name': user_name,
-                           'git_error': 'Dwnload failed, try again'
+                           'git_error': err
                            }
                 return render(request, 'main/upload.html', context)
 
             link = git.cleaned_data['git_link']
             direct_dir = os.path.join(os.getcwd(), 'main', 'user_files', user_name)
             if '/' not in link or link.count('/') < 4:
-                return git_error()
+                return git_error('Link include errors, try again')
             else:
                 prj_name = link.split('/')[-1]
             if prj_name in os.listdir(direct_dir):
@@ -148,7 +142,8 @@ def upload(request):
                 shutil.rmtree(cell_dir, ignore_errors=True)
                 os.mkdir(cell_dir)
                 if git_clone(link, cell_dir) != 0:
-                    return git_error()
+                    shutil.rmtree(cell_dir, ignore_errors=True)
+                    return git_error('''Can't Git clone, recheck link''')
                 prg = Progs.objects.get(filename=prj_name)
                 prg.version += 1
                 prg.save()
@@ -156,7 +151,8 @@ def upload(request):
                 cell_dir = os.path.join(direct_dir, prj_name)
                 os.mkdir(cell_dir)
                 if git_clone(link, cell_dir) != 0:
-                    return git_error()
+                    shutil.rmtree(cell_dir, ignore_errors=True)
+                    return git_error('''Can't Git clone, recheck link''')
                 new_p = Progs()
                 new_p.filename = prj_name
                 new_p.status = 'not_runned'
