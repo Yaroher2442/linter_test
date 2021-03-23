@@ -38,7 +38,7 @@ def syntax_test(file_path, prog_id, version):
         return -1
 
 
-def syntax_test_2(file_path):
+def syntax_test_2(file_path, prog_id, version):
     try:
         for dirname, dirnames, filenames in os.walk(file_path):
             for filename in filenames:
@@ -61,6 +61,14 @@ def syntax_test_2(file_path):
                         report_items['syntax_errors'] = '\n'.join(syntax_err)
                         report_items['time'] = datetime.now().strftime("%d.%m.%Y-%H:%M:%S")
                         print(report_items)
+                        test_s = Syntax(time=report_items['time'],
+                                        version=version,
+                                        prog_id=prog_id,
+                                        err_text=report_items['syntax_errors'],
+                                        count=report_items['syntax_count'],
+                                        score=report_items['code_score'],
+                                        )
+                        test_s.save()
                     else:
                         continue
                 else:

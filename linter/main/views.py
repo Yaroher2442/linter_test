@@ -112,7 +112,8 @@ def process_syntax(request, prg_name):
     prog_id = cur_prg.id
     version = cur_prg.version
     # syntax_test(analys_path, prog_id, version)
-    syntax_test_2(os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name))
+    cell_dir=os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name)
+    syntax_test_2(cell_dir,prog_id,version)
     return HttpResponseRedirect(f'/prog/{prg_name}')
 
 
