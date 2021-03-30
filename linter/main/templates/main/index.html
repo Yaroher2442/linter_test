@@ -12,11 +12,17 @@
 {% include "./helpers/header.html" %}
 <div class="container-fluid">
     <div class="row">
-        {% include "./helpers/patern.html" %}
+        {% if logined == True %}
+            {% include "./helpers/patern.html" %}
+        {% endif %}
         <div class="jumbotron jumbotron-fluid">
             <div class="container">
                 <h1 class="display-3">Welcome to Linter!</h1>
                 <p><a class="btn btn-primary btn-lg" href="/how_use" role="button">How to use</a></p>
+                {% if logined != True %}
+                    <p><a class="btn btn-primary btn-lg" href="/login" role="button">Login</a></p>
+                {% endif %}
+
             </div>
         </div>
     </div>

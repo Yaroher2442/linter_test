@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .form import UploadFileForm, Register, Git_form
 from .models import Progs, Syntax
-from .tasks import syntax_test,syntax_test_2
+from .tasks import syntax_test, syntax_test_2
 
 
 @csrf_exempt
@@ -55,17 +55,20 @@ def logout_view(request):
     return HttpResponseRedirect('/login')
 
 
-@login_required(login_url='/login')
 def index(request):
     user_name = request.user.username
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/login')
     context = {'prg_names': valids_progs(user_name),
                'page_flag': '',
+               'logined': False,
                'prg_data': '',
                'dataset': {},
                'status': ''}
-    return render(request, 'main/index.html', context)
+    if not request.user.is_authenticated:
+        return render(request, 'main/index.html', context)
+    else:
+        context['logined'] = True
+        print(context)
+        return render(request, 'main/index.html', context)
 
 
 def how_use(request):
@@ -87,7 +90,7 @@ def prog(request, prg_name):
     p_id = cur_prg.id
     status = cur_prg.get_status()
     version = cur_prg.get_version()
-    color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green'}
+    color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green', 'test_failed': 'red'}
 
     synt = Syntax.objects.filter(prog_id=p_id)
     context = {'prg_names': valids_progs(user_name),
@@ -100,14 +103,22 @@ def prog(request, prg_name):
                }
     return render(request, 'main/prog.html', context)
 
+
 def process_syntax(request, prg_name):
     user_name = request.user.username
-    analys_path = os.path.join(os.getcwd(), 'main', 'user_files', prg_name, prg_name + '.py')
     cur_prg = Progs.objects.get(filename=prg_name)
     prog_id = cur_prg.id
     version = cur_prg.version
-    cell_dir=os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name)
-    syntax_test_2(cell_dir,prog_id,version)
+    cell_dir = os.path.join(os.getcwd(), 'main', 'user_files', user_name, prg_name)
+    s_test_result = syntax_test_2(cell_dir, prog_id, version)
+    print(s_test_result)
+    if s_test_result <= 1:
+        cur_prg.status = 'passed'
+    elif s_test_result == -1:
+        cur_prg.status = 'test_failed'
+    else:
+        cur_prg.status = 'syntax_errors'
+    cur_prg.save()
     return HttpResponseRedirect(f'/prog/{prg_name}')
 
 
@@ -122,19 +133,19 @@ def upload(request):
                 return os.system(
                     f'GIT_TERMINAL_PROMPT=0 git clone {href} {path}')
 
-            def git_error():
+            def git_error(err):
                 context = {'prg_names': valids_progs(user_name),
                            'form': UploadFileForm(),
                            'git': Git_form(),
                            'user_name': user_name,
-                           'git_error': 'Dwnload failed, try again'
+                           'git_error': err
                            }
                 return render(request, 'main/upload.html', context)
 
             link = git.cleaned_data['git_link']
             direct_dir = os.path.join(os.getcwd(), 'main', 'user_files', user_name)
             if '/' not in link or link.count('/') < 4:
-                return git_error()
+                return git_error('Link include errors, try again')
             else:
                 prj_name = link.split('/')[-1]
             if prj_name in os.listdir(direct_dir):
@@ -142,7 +153,8 @@ def upload(request):
                 shutil.rmtree(cell_dir, ignore_errors=True)
                 os.mkdir(cell_dir)
                 if git_clone(link, cell_dir) != 0:
-                    return git_error()
+                    shutil.rmtree(cell_dir, ignore_errors=True)
+                    return git_error('''Can't Git clone, recheck link''')
                 prg = Progs.objects.get(filename=prj_name)
                 prg.version += 1
                 prg.save()
@@ -150,7 +162,8 @@ def upload(request):
                 cell_dir = os.path.join(direct_dir, prj_name)
                 os.mkdir(cell_dir)
                 if git_clone(link, cell_dir) != 0:
-                    return git_error()
+                    shutil.rmtree(cell_dir, ignore_errors=True)
+                    return git_error('''Can't Git clone, recheck link''')
                 new_p = Progs()
                 new_p.filename = prj_name
                 new_p.status = 'not_runned'

@@ -1,18 +1,19 @@
 import os
 import shutil
+import xlwt
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, FileResponse, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 from .form import UploadFileForm, Register, Git_form
 from .models import Progs, Syntax
-from .tasks import syntax_test,syntax_test_2
+from .tasks import syntax_test, syntax_test_2
 
 
 @csrf_exempt
@@ -55,17 +56,19 @@ def logout_view(request):
     return HttpResponseRedirect('/login')
 
 
-@login_required(login_url='/login')
 def index(request):
     user_name = request.user.username
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/login')
     context = {'prg_names': valids_progs(user_name),
                'page_flag': '',
+               'logined': False,
                'prg_data': '',
                'dataset': {},
                'status': ''}
-    return render(request, 'main/index.html', context)
+    if not request.user.is_authenticated:
+        return render(request, 'main/index.html', context)
+    else:
+        context['logined'] = True
+        return render(request, 'main/index.html', context)
 
 
 def how_use(request):
@@ -81,33 +84,57 @@ def valids_progs(user_name):
 @login_required(login_url='/login')
 @csrf_exempt
 def prog(request, prg_name):
-    print(request.user.username)
     user_name = request.user.username
     cur_prg = Progs.objects.get(filename=prg_name)
     p_id = cur_prg.id
     status = cur_prg.get_status()
     version = cur_prg.get_version()
-    color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green'}
-
+    color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green', 'test_failed': 'red'}
     synt = Syntax.objects.filter(prog_id=p_id)
+    dataset = [{'version': str(d), 'payload': Syntax.objects.filter(prog_id=p_id, version=d)} for d in
+               [i.version for i in synt]]
     context = {'prg_names': valids_progs(user_name),
                'title': prg_name,
+               'p_id': p_id,
                'status': status.replace('_', ' '),
                'status_colour': color_dict[status],
                'version': version,
-               'dataset': synt,
-               'user_name': user_name
+               'user_name': user_name,
+               'dataset': dataset
                }
     return render(request, 'main/prog.html', context)
 
+
+@login_required(login_url='/login')
+@csrf_exempt
+def syntax(request, synt_id):
+    user_name = request.user.username
+    cur_synt = Syntax.objects.get(id=synt_id)
+    print(cur_synt.err_text)
+    context = {'prg_names': valids_progs(user_name),
+               'title': cur_synt.prog,
+               'version': cur_synt.version,
+               'user_name': user_name,
+               'dat': cur_synt
+               }
+    return render(request, 'main/syntax.html', context)
+
+
 def process_syntax(request, prg_name):
     user_name = request.user.username
-    analys_path = os.path.join(os.getcwd(), 'main', 'user_files', prg_name, prg_name + '.py')
     cur_prg = Progs.objects.get(filename=prg_name)
     prog_id = cur_prg.id
     version = cur_prg.version
-    cell_dir=os.path.join(os.getcwd(), 'main', 'user_files',user_name, prg_name)
-    syntax_test_2(cell_dir,prog_id,version)
+    cell_dir = os.path.join(os.getcwd(), 'main', 'user_files', user_name, prg_name)
+    s_test_result = syntax_test_2(cell_dir, prog_id, version)
+    print(s_test_result)
+    if s_test_result <= 1:
+        cur_prg.status = 'passed'
+    elif s_test_result == -1:
+        cur_prg.status = 'test_failed'
+    else:
+        cur_prg.status = 'syntax_errors'
+    cur_prg.save()
     return HttpResponseRedirect(f'/prog/{prg_name}')
 
 
@@ -204,3 +231,25 @@ def delite(request, p_name):
         ob.delete()
     cur_prg.delete()
     return HttpResponseRedirect('/')
+
+
+def take_report(request, p_id):
+    cur_prg = Progs.objects.get(id=p_id)
+    model_fields = [f.name for f in Syntax._meta.get_fields()]
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = f'attachment; filename="{cur_prg.filename}.xls"'
+    wb = xlwt.Workbook(encoding='utf-8')
+    ws = wb.add_sheet(cur_prg.filename)
+    row_num = 0
+    font_style = xlwt.XFStyle()
+    font_style.font.bold = True
+    for col_num in range(len(model_fields)):
+        ws.write(row_num, col_num, model_fields[col_num], font_style)
+    font_style = xlwt.XFStyle()
+    rows = Syntax.objects.all().values_list(*model_fields)
+    for row in rows:
+        row_num += 1
+        for col_num in range(len(row)):
+            ws.write(row_num, col_num, row[col_num], font_style)
+    wb.save(response)
+    return response

@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 </head>
 <body>
 {% include "./helpers/header.html" %}
@@ -14,6 +15,9 @@
     <div class="row">
         {% include "./helpers/patern.html" %}
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+            <div class="float-right mt-3">
+                <a type="button"  href="/report/{{p_id}}" class="btn btn-dark">Download report (.xlsx)</a>
+            </div>
             <h1>{{title}}</h1>
             <h2>version- {{version}}</h2>
             <span class="align-middle">
@@ -24,7 +28,7 @@
                 </svg> - {{status}}
                 </h3>
             </span>
-            <div class="d-flex flex-row">
+            <div class="d-flex flex-row mt-2">
                 <a class="btn btn-info py-2 px-3" href="/process_syntax/{{ title }}">
                     <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill" fill="currentColor"
                          xmlns="http://www.w3.org/2000/svg">
@@ -33,14 +37,19 @@
                     </svg>
                     Click to run test
                 </a>
-
                 <form method="get" action="/delite/{{title}}">
-                    <button type=submit class="btn btn-danger py-2 px-3">
+                    <button type=submit class="btn btn-danger py-2 px-3 ml-1">
                         Delite this program
                     </button>
                 </form>
             </div>
-            <div class="table-responsive">
+
+            <div class="d-flex flex-row mt-2 mb-2">
+                {% for dat in dataset %}
+                <button type=submit id="changer_{{dat.version}}" class="btn btn-secondary py-2 px-3 mr-1">Version {{ dat.version }}</button>
+                {% endfor %}
+            </div>
+            <div  class="table-responsive">
                 <table class="table table-striped table-sm">
                     <thead>
                     <tr>
@@ -52,26 +61,24 @@
                         <th>Code rate</th>
                     </tr>
                     </thead>
-                    <tbody>
-                    {% for dat in dataset %}
-                    <tr>
-                        <td>{{forloop.counter}}</td>
-                        <td>{{dat.version}}</td>
-                        <td>{{dat.file}}</td>
-                        <td>{{dat.time}}</td>
-                        <td>
-                            <a class="btn btn-warning btn-sm" href="/syntax/{{dat.id}}" role="button">{{dat.count}}
-                                Errors -
-                                view</a>
-                        </td>
-                        <td>{{dat.score}}</td>
-                    </tr>
-                    {% endfor %}
+                    <tbody id="table">
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
 </div>
+
+<script>
+{% for vers in dataset %}
+        $('#changer_{{vers.version}}').on('click',
+        (e)=>{
+        $('#table').html('')
+        $('#table').html('{% for dat in vers.payload %}<tr><td>{{forloop.counter}} </td><td>{{dat.version}}</td><td>{{dat.file}}</td><td>{{dat.time}}</td><td><a class="btn btn-warning btn-sm" href="/syntax/{{dat.id}}" role="button">{{dat.count}} Errors - view</a></td><td>{{dat.score}}</td></tr>{% endfor %}')
+          }
+        )
+{% endfor %}
+
+</script>
 </body>
 </html>
