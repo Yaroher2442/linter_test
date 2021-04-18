@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
@@ -8,25 +8,40 @@
     <title>Document</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
+
 <body>
 {% include "./helpers/header.html" %}
-<div class="container-fluid">
-    <div class="row">
-        {% if logined == True %}
-            {% include "./helpers/patern.html" %}
-        {% endif %}
-        <div class="jumbotron jumbotron-fluid">
-            <div class="container">
-                <h1 class="display-3">Welcome to Linter!</h1>
-                <p><a class="btn btn-primary btn-lg" href="/how_use" role="button">How to use</a></p>
-                {% if logined != True %}
-                    <p><a class="btn btn-primary btn-lg" href="/login" role="button">Login</a></p>
-                {% endif %}
+<main>
+    <!-- Header - set the background image for the header in the line below -->
 
+    <div class="container-fluid">
+        <div class="row">
+            {% if logined == True %}
+            {% include "./helpers/patern.html" %}
+            {% endif %}
+
+            <!-- Content section -->
+            <div class="py-5">
+                <div class="container">
+                    <h1>Section Heading</h1>
+                    <p class="lead">Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquid, suscipit, rerum quos facilis
+                        repellat
+                        architecto commodi officia atque nemo facere eum non illo voluptatem quae delectus odit vel
+                        itaque
+                        amet.</p>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</main>
+<!-- Footer -->
+<footer class="py-5 bg-dark fixed-bottom">
+    <div class="container">
+        <p class="m-0 text-center text-white">Copyright &copy; Your Website 2020</p>
+    </div>
+    <!-- /.container -->
+</footer>
 </body>
 </html>
 

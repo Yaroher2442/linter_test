@@ -15,6 +15,7 @@ class Progs(models.Model):
 
 class Syntax(models.Model):
     prog = models.ForeignKey(Progs, on_delete=models.CASCADE)
+    test_passed=models.BooleanField(default=False)
     file = models.CharField(max_length=200, default='')
     time = models.CharField(max_length=200, default='')
     version = models.IntegerField(default=0)

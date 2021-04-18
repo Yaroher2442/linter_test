@@ -1,7 +1,9 @@
 import os
 import shutil
 import xlwt
+from pprint import pprint
 
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -43,8 +45,12 @@ def register(request):
     if request.method == 'POST':
         form = Register(request.POST)
         if form.is_valid():
-            user = User.objects.create_user(**form.cleaned_data)
-            user.save()
+            try:
+                user = User.objects.create_user(**form.cleaned_data)
+                user.save()
+            except:
+                messages.error(request, "This user alredy registered")
+                return HttpResponseRedirect('/register')
         return HttpResponseRedirect('/login')
     else:
         context = {'form': Register()}
@@ -62,6 +68,7 @@ def index(request):
                'page_flag': '',
                'logined': False,
                'prg_data': '',
+               'user_name': user_name,
                'dataset': {},
                'status': ''}
     if not request.user.is_authenticated:
@@ -91,8 +98,10 @@ def prog(request, prg_name):
     version = cur_prg.get_version()
     color_dict = {'not_runned': 'darkgray', 'syntax_errors': 'yellow', 'passed': 'green', 'test_failed': 'red'}
     synt = Syntax.objects.filter(prog_id=p_id)
-    dataset = [{'version': str(d), 'payload': Syntax.objects.filter(prog_id=p_id, version=d)} for d in
-               [i.version for i in synt]]
+    dataset = [{'version': str(v), 'payload': Syntax.objects.filter(prog_id=p_id, version=v)} for v in
+               set([i.version for i in synt])]
+    # vesions = set([d for d in [i.version for i in synt]])
+    pprint(dataset)
     context = {'prg_names': valids_progs(user_name),
                'title': prg_name,
                'p_id': p_id,
@@ -100,7 +109,9 @@ def prog(request, prg_name):
                'status_colour': color_dict[status],
                'version': version,
                'user_name': user_name,
-               'dataset': dataset
+               'dataset': dataset,
+               'error': '',
+               'logined': True
                }
     return render(request, 'main/prog.html', context)
 
@@ -115,7 +126,8 @@ def syntax(request, synt_id):
                'title': cur_synt.prog,
                'version': cur_synt.version,
                'user_name': user_name,
-               'dat': cur_synt
+               'dat': cur_synt,
+               'logined': True
                }
     return render(request, 'main/syntax.html', context)
 
@@ -128,16 +140,22 @@ def process_syntax(request, prg_name):
     cell_dir = os.path.join(os.getcwd(), 'main', 'user_files', user_name, prg_name)
     s_test_result = syntax_test_2(cell_dir, prog_id, version)
     print(s_test_result)
-    if s_test_result <= 1:
-        cur_prg.status = 'passed'
+    if s_test_result == -2:
+        messages.error(request, "Your code have not .py files. Please retry do upload")
     elif s_test_result == -1:
         cur_prg.status = 'test_failed'
-    else:
-        cur_prg.status = 'syntax_errors'
+        messages.error(request, "Sory we can't test it, try reload file")
+    elif s_test_result >= 0:
+        if s_test_result <= 1.0:
+            cur_prg.status = 'passed'
+        else:
+            cur_prg.status = 'syntax_errors'
+
     cur_prg.save()
     return HttpResponseRedirect(f'/prog/{prg_name}')
 
 
+@login_required(login_url='/login')
 @csrf_exempt
 def upload(request):
     if request.method == 'POST':
@@ -154,7 +172,8 @@ def upload(request):
                            'form': UploadFileForm(),
                            'git': Git_form(),
                            'user_name': user_name,
-                           'git_error': err
+                           'git_error': err,
+                           'logined': True
                            }
                 return render(request, 'main/upload.html', context)
 
@@ -216,7 +235,8 @@ def upload(request):
         context = {'prg_names': valids_progs(user_name),
                    'form': UploadFileForm(),
                    'git': Git_form(),
-                   'user_name': user_name
+                   'user_name': user_name,
+                   'logined': True
                    }
         return render(request, 'main/upload.html', context)
 
@@ -252,4 +272,12 @@ def take_report(request, p_id):
         for col_num in range(len(row)):
             ws.write(row_num, col_num, row[col_num], font_style)
     wb.save(response)
+    return response
+
+
+def get_logo(request):
+    file_location = os.path.join(os.getcwd(),'static','logo.png')
+    with open(file_location, 'r') as f:
+        file_data = f.read()
+    response = HttpResponse(file_data, content_type='image')
     return response
