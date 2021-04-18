@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .form import UploadFileForm, Register, Git_form
 from .models import Progs, Syntax
-from .tasks import syntax_test, syntax_test_2
+from .tasks import syntax_test_2
 
 
 @csrf_exempt
@@ -276,7 +276,7 @@ def take_report(request, p_id):
 
 
 def get_logo(request):
-    file_location = os.path.join(os.getcwd(),'static','logo.png')
+    file_location = os.path.join(os.getcwd(), 'static', 'logo.png')
     with open(file_location, 'r') as f:
         file_data = f.read()
     response = HttpResponse(file_data, content_type='image')
