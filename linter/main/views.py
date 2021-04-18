@@ -139,7 +139,6 @@ def process_syntax(request, prg_name):
     version = cur_prg.version
     cell_dir = os.path.join(os.getcwd(), 'main', 'user_files', user_name, prg_name)
     s_test_result = syntax_test_2(cell_dir, prog_id, version)
-    print(s_test_result)
     if s_test_result == -2:
         messages.error(request, "Your code have not .py files. Please retry do upload")
     elif s_test_result == -1:

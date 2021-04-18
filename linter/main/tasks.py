@@ -34,7 +34,7 @@ def syntax_test_2(file_path, prog_id, version):
                             for l in lints:
                                 if 'warning' in l:
                                     err = l.split(':')
-                                    syntax_err.append(f'line({err[2]}) : {err[3]} ')
+                                    syntax_err.append(f'line({err[1]}) : {err[2]} ')
                                 if 'rated' in l:
                                     report_items['code_score'] = l.split('(')[0]
                                 else:
@@ -42,7 +42,6 @@ def syntax_test_2(file_path, prog_id, version):
                             report_items['syntax_count'] = str(len(syntax_err))
                             report_items['syntax_errors'] = '\n'.join(syntax_err)
                             report_items['time'] = datetime.now().strftime("%d.%m.%Y-%H:%M:%S")
-                            print(report_items)
                             returns_count += int(report_items['syntax_count'])
                             test_s = Syntax(time=report_items['time'],
                                             file=filename,
